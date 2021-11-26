@@ -1,15 +1,19 @@
 const path = require('path')
 const axios = require('axios')
+const axiosRetry = require('axios-retry')
 const config = require('config')
 const protobufjs = require('protobufjs')
 const lodash = require('lodash')
 const cheerio = require('cheerio')
+const NodeCache = require('node-cache')
+const srvCache = new NodeCache({stdTTL: 30, useClones: false});
 
 const GTFSR_URL = 'https://api.transport.nsw.gov.au/v1/gtfs/alerts/all';
 const EFA_ADD_INFO_URL = 'https://api.transport.nsw.gov.au/v1/tp/add_info?outputFormat=rapidJSON';
 
 const API_KEY = config.get('tfnsw.apiKey');
 axios.defaults.headers.common['Authorization'] = `apikey ${API_KEY}`;
+axiosRetry(axios, { retries: 3 });
 
 const root = protobufjs.loadSync(path.join(__dirname, '../gtfs-realtime.proto'));
 const FeedMessage = root.lookupType("transit_realtime.FeedMessage");
@@ -20,6 +24,11 @@ const SEV_MAPPING = {
 }
 
 const getMatchedAlerts = async () => {
+    const cached = srvCache.get('cached');
+    if(cached){
+        return cached
+    }
+
     const {data: addInfoData} = await axios.get(EFA_ADD_INFO_URL);
     const {data: gtfsData} = await axios.get(GTFSR_URL, {
         responseType: 'arraybuffer'
@@ -57,6 +66,7 @@ const getMatchedAlerts = async () => {
     const normal = FeedMessage.create(decoded);
     normal.entity = normal.entity.filter(entity => entity.alert.severityLevel !== 'INFO')
 
+    srvCache.set('cached', {all, normal})
     return {
         all,
         normal
