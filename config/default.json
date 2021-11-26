@@ -1,0 +1,5 @@
+{
+    "tfnsw": {
+        "apiKey": "set here or via env variable"
+    }
+}
