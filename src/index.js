@@ -52,13 +52,14 @@ const getMatchedAlerts = async () => {
     }
 
     decoded.header.gtfsRealtimeVersion = '2.0'
+    
+    const all = decoded;
+    const normal = FeedMessage.create(decoded);
+    normal.entity = normal.entity.filter(entity => entity.alert.severity_level !== 2)
 
     return {
-        all: decoded,
-        normal: {
-            ...decoded,
-            entity: decoded.entity.filter(entity => entity.alert.severity_level !== 2)
-        }
+        all,
+        normal
     }
 }
 
