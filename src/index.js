@@ -55,7 +55,7 @@ const getMatchedAlerts = async () => {
     
     const all = decoded;
     const normal = FeedMessage.create(decoded);
-    normal.entity = normal.entity.filter(entity => entity.alert.severity_level !== 2)
+    normal.entity = normal.entity.filter(entity => entity.alert.severityLevel !== 'INFO')
 
     return {
         all,
