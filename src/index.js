@@ -119,9 +119,9 @@ const getMatchedAlerts = async () => {
                 header.text = '⛔️🛗 ' + header.text
             }else if(matchTxt.match(/Trackwork may affect your travel/i)){
                 header.text = '🛠🛤 ' + header.text
-            }else if(cause === 'MAINTENANCE' && effect === 'MODIFIED_SERVICE'){
+            }else if(cause === 9 && effect === 6){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
                 header.text = '🛠🛤 ' + header.text
-            }else if(effect === 'MODIFIED_SERVICE'){
+            }else if(effect === 6){
                 header.text = '🔀 ' + header.text
             }
         }
