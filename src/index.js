@@ -96,7 +96,7 @@ const getMatchedAlerts = async () => {
                 $(el).html('• ' + $(el).html())
             });
 
-            const text = $('html').text().trim().replace(/\n\s*\.$/, '').trim();
+            const text = $('html').text().trim().replace(/\n\s*\.$/, '').replace(/(\s*\.)+$/, '.').trim();
             descTxt = text;
             lodash.set(entity, 'alert.descriptionText.translation', [{text, language: 'en'}, htmlTranslation]);
         }else{
