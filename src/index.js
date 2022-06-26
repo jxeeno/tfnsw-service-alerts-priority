@@ -124,6 +124,8 @@ const getMatchedAlerts = async () => {
             const matchTxt = [header.text||'', descTxt||''].join('\n');
             if(matchTxt.match(/Lift at .* (not available|out of service)/i)){
                 header.text = '⛔️🛗 ' + header.text
+            }else if(matchTxt.match(/bus stop closure/i)){
+                header.text = '⛔️🚏 ' + header.text
             }else if(matchTxt.match(/Trackwork may affect your travel/i)){
                 header.text = '🛠🛤 ' + header.text
             }else if(cause === 9 && effect === 6 && isRail){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
