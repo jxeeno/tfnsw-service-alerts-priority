@@ -130,7 +130,7 @@ const getMatchedAlerts = async () => {
                 header.text = '🛠🛤 ' + header.text
             }else if(cause === 8){
                 header.text = '🌨 ' + header.text
-            }else if(effect === 6){
+            }else if(effect === 6 || effect === 4){
                 header.text = '🔀 ' + header.text
             }
         }
