@@ -63,6 +63,7 @@ const getMatchedAlerts = async () => {
 
         const stops = new Set();
         const routes = new Set();
+        const agencyIds = new Set();
 
         const existingEntities = lodash.get(entity, 'alert.informedEntity');
 
@@ -78,6 +79,10 @@ const getMatchedAlerts = async () => {
                     const ridk = JSON.stringify({routeId: e.routeId, agencyId: e.agencyId});
                     routes.add(ridk)
                 }
+            }
+
+            if(e.agencyId){
+                agencyIds.add(e.agencyId)
             }
         }
 
@@ -113,14 +118,18 @@ const getMatchedAlerts = async () => {
         const cause = lodash.get(entity, 'alert.cause');
         const effect = lodash.get(entity, 'alert.effect');
 
+        const isRail = agencyIds.has('SydneyTrains') || agencyIds.has('NSWTrains') || agencyIds.has('SMNW') || agencyIds.has('SLR') || agencyIds.has('LR');
+
         if(header){
             const matchTxt = [header.text||'', descTxt||''].join('\n');
             if(matchTxt.match(/Lift at .* (not available|out of service)/i)){
                 header.text = '⛔️🛗 ' + header.text
             }else if(matchTxt.match(/Trackwork may affect your travel/i)){
                 header.text = '🛠🛤 ' + header.text
-            }else if(cause === 9 && effect === 6){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
+            }else if(cause === 9 && effect === 6 && isRail){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
                 header.text = '🛠🛤 ' + header.text
+            }else if(cause === 8){
+                header.text = '🌨 ' + header.text
             }else if(effect === 6){
                 header.text = '🔀 ' + header.text
             }
