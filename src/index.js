@@ -68,7 +68,7 @@ const getMatchedAlerts = async () => {
 
         for(const e of existingEntities){
             if(e.trip){
-                informedEntities.push(e)
+                informedEntities.push({trip: e.trip})
             }else{
                 if(e.stopId){
                     stops.add(e.stopId)
