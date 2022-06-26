@@ -88,6 +88,7 @@ const getMatchedAlerts = async () => {
 
         const descTranslations = lodash.get(entity, 'alert.descriptionText.translation', []);
         const htmlTranslation = descTranslations.find(v => v.language === 'en/html' || v.text.match(/<(div|li)>/));
+        let descTxt;
 
         if(htmlTranslation){
             const $ = cheerio.load(`<html>${htmlTranslation.text}</html>`);
@@ -95,11 +96,13 @@ const getMatchedAlerts = async () => {
                 $(el).html('• ' + $(el).html())
             });
 
-            const text = $('html').text().trim();
-            lodash.set(entity, 'alert.descriptionText.translation', [{text, language: 'en'}]);
+            const text = $('html').text().trim().replace(/\n\s*\.$/).trim();
+            descTxt = text;
+            lodash.set(entity, 'alert.descriptionText.translation', [{text, language: 'en'}, htmlTranslation]);
         }else{
             for(const translation of descTranslations){
                 translation.text = translation.text.trim();
+                descTxt = translation.text;
             }
         }
 
@@ -111,9 +114,10 @@ const getMatchedAlerts = async () => {
         const effect = lodash.get(entity, 'alert.effect');
 
         if(header){
-            if(header.text.match(/Lift at .* (not available|out of service)/)){
+            const matchTxt = [header.text||'', descTxt||''].join('\n');
+            if(matchTxt.match(/Lift at .* (not available|out of service)/)){
                 header.text = '⛔️🛗 ' + header.text
-            }else if(header.text.match(/Trackwork may affect your travel/)){
+            }else if(matchTxt.match(/Trackwork may affect your travel/)){
                 header.text = '🛠🛤 ' + header.text
             }else if(cause === 'MAINTENANCE' && effect === 'MODIFIED_SERVICE'){
                 header.text = '🛠🛤 ' + header.text
