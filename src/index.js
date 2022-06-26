@@ -133,6 +133,8 @@ const getMatchedAlerts = async () => {
                 header.text = '🔀 ' + header.text.trim()
             }else if(cause === 6){ // accident
                 header.text = '💥 ' + header.text.trim()
+            }else if(cause === 12){ // accident
+                header.text = '🚑 ' + header.text.trim()
             }
         }
 
