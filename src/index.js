@@ -58,6 +58,33 @@ const getMatchedAlerts = async () => {
                 }
             }
         }
+
+        const informedEntities = [];
+
+        const stops = new Set();
+        const routes = new Set();
+
+        const existingEntities = lodash.get(entity, 'alert.informedEntity');
+
+        for(const e of existingEntities){
+            if(e.stopId){
+                stops.add(e.stopId)
+            }
+
+            if(e.routeId){
+                const ridk = JSON.stringify({routeId: e.routeId, agencyId: e.agencyId});
+                routes.add(ridk)
+            }
+
+            if(e.tripId){
+                informedEntities.push(e)
+            }
+        }
+
+        stops.forEach(s => informedEntities.push({stopId: s}))
+        routes.forEach(r => informedEntities.push(JSON.parse(r)))
+
+        lodash.set(entity, 'alert.informedEntity', informedEntities);
     }
 
     decoded.header.gtfsRealtimeVersion = '2.0'
