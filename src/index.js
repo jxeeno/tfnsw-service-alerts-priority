@@ -108,9 +108,9 @@ const getMatchedAlerts = async () => {
         const header = headerTranslations.find(v => v.language === 'en');
 
         if(header){
-            if(header.match(/Lift at .* (not available|out of service)/)){
+            if(header.tet.match(/Lift at .* (not available|out of service)/)){
                 header.text = '⛔️🛗 ' + header.text
-            }else if(header.match(/Trackwork may affect your travel/)){
+            }else if(header.text.match(/Trackwork may affect your travel/)){
                 header.text = '🛠🛤 ' + header.text
             }
         }
