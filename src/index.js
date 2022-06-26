@@ -128,6 +128,8 @@ const getMatchedAlerts = async () => {
                 header.text = '🛠🛤 ' + header.text
             }else if(cause === 9 && effect === 6 && isRail){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
                 header.text = '🛠🛤 ' + header.text
+            }else if(cause === 9 && effect === 6){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
+                header.text = '🛠 ' + header.text
             }else if(cause === 8){
                 header.text = '🌨 ' + header.text
             }else if(effect === 6 || effect === 4){
