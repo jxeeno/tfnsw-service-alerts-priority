@@ -87,8 +87,20 @@ const getMatchedAlerts = async () => {
         lodash.set(entity, 'alert.informedEntity', informedEntities);
 
         const descTranslations = lodash.get(entity, 'alert.descriptionText.translation', []);
-        for(const translation of descTranslations){
-            translation.text = translation.text.trim();
+        const htmlTranslation = descTranslations.find(v => v.language === 'en/html');
+
+        if(htmlTranslation){
+            const $ = cheerio.load(`<html>${htmlTranslation.text}</html>`);
+            $("li").each((i, el) => {
+                $(el).prepend('<span>• </span>')
+            });
+
+            const text = $('html').text().trim();
+            lodash.set(entity, 'alert.descriptionText.translation', [{text, language: 'en'}]);
+        }else{
+            for(const translation of descTranslations){
+                translation.text = translation.text.trim();
+            }
         }
     }
 
