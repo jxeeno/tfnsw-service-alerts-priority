@@ -67,17 +67,17 @@ const getMatchedAlerts = async () => {
         const existingEntities = lodash.get(entity, 'alert.informedEntity');
 
         for(const e of existingEntities){
-            if(e.stopId){
-                stops.add(e.stopId)
-            }
-
-            if(e.routeId){
-                const ridk = JSON.stringify({routeId: e.routeId, agencyId: e.agencyId});
-                routes.add(ridk)
-            }
-
             if(e.trip){
                 informedEntities.push(e)
+            }else{
+                if(e.stopId){
+                    stops.add(e.stopId)
+                }
+
+                if(e.routeId){
+                    const ridk = JSON.stringify({routeId: e.routeId, agencyId: e.agencyId});
+                    routes.add(ridk)
+                }
             }
         }
 
