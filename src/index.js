@@ -104,7 +104,7 @@ const getMatchedAlerts = async () => {
         }
 
         // emojis
-        const headerTranslations = lodash.get(entity, 'alert.descriptionText.translation', []);
+        const headerTranslations = lodash.get(entity, 'alert.headerText.translation', []);
         const header = headerTranslations.find(v => v.language === 'en');
 
         if(header){
