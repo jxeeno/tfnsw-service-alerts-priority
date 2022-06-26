@@ -107,10 +107,15 @@ const getMatchedAlerts = async () => {
         const headerTranslations = lodash.get(entity, 'alert.headerText.translation', []);
         const header = headerTranslations.find(v => v.language === 'en');
 
+        const cause = lodash.get(entity, 'alert.cause');
+        const effect = lodash.get(entity, 'alert.effect');
+
         if(header){
             if(header.text.match(/Lift at .* (not available|out of service)/)){
                 header.text = '⛔️🛗 ' + header.text
             }else if(header.text.match(/Trackwork may affect your travel/)){
+                header.text = '🛠🛤 ' + header.text
+            }else if(cause === 'MAINTENANCE' && effect === 'MODIFIED_SERVICE'){
                 header.text = '🛠🛤 ' + header.text
             }
         }
