@@ -96,7 +96,7 @@ const getMatchedAlerts = async () => {
                 $(el).html('• ' + $(el).html())
             });
 
-            const text = $('html').text().trim().replace(/\n\s*\.$/).trim();
+            const text = $('html').text().trim().replace(/\n\s*\.$/, '').trim();
             descTxt = text;
             lodash.set(entity, 'alert.descriptionText.translation', [{text, language: 'en'}, htmlTranslation]);
         }else{
@@ -133,7 +133,7 @@ const getMatchedAlerts = async () => {
                 header.text = '🔀 ' + header.text.trim()
             }else if(cause === 6){ // accident
                 header.text = '💥 ' + header.text.trim()
-            }else if(cause === 12){ // accident
+            }else if(cause === 12){ // medical
                 header.text = '🚑 ' + header.text.trim()
             }
         }
