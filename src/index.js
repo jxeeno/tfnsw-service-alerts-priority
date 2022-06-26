@@ -92,7 +92,7 @@ const getMatchedAlerts = async () => {
         if(htmlTranslation){
             const $ = cheerio.load(`<html>${htmlTranslation.text}</html>`);
             $("li").each((i, el) => {
-                $(el).prepend('<span>• </span>')
+                $(el).html('• ' + $(el).html())
             });
 
             const text = $('html').text().trim();
