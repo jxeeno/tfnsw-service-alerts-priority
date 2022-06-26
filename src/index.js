@@ -102,6 +102,18 @@ const getMatchedAlerts = async () => {
                 translation.text = translation.text.trim();
             }
         }
+
+        // emojis
+        const headerTranslations = lodash.get(entity, 'alert.descriptionText.translation', []);
+        const header = headerTranslations.find(v => v.language === 'en');
+
+        if(header){
+            if(header.match(/Lift at .* (not available|out of service)/)){
+                header.text = '⛔️🛗 ' + header.text
+            }else if(header.match(/Trackwork may affect your travel/)){
+                header.text = '🛠🛤 ' + header.text
+            }
+        }
     }
 
     decoded.header.gtfsRealtimeVersion = '2.0'
