@@ -87,7 +87,7 @@ const getMatchedAlerts = async () => {
         lodash.set(entity, 'alert.informedEntity', informedEntities);
 
         const descTranslations = lodash.get(entity, 'alert.descriptionText.translation', []);
-        const htmlTranslation = descTranslations.find(v => v.language === 'en/html');
+        const htmlTranslation = descTranslations.find(v => v.language === 'en/html' || v.text.match(/<(div|li)>/));
 
         if(htmlTranslation){
             const $ = cheerio.load(`<html>${htmlTranslation.text}</html>`);
