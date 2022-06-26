@@ -8,7 +8,7 @@ const cheerio = require('cheerio')
 const NodeCache = require('node-cache')
 const srvCache = new NodeCache({stdTTL: 30, useClones: false});
 
-const GTFSR_URL = 'https://api.transport.nsw.gov.au/v1/gtfs/alerts/all';
+const GTFSR_URL = 'https://api.transport.nsw.gov.au/v2/gtfs/alerts/all';
 const EFA_ADD_INFO_URL = 'https://api.transport.nsw.gov.au/v1/tp/add_info?outputFormat=rapidJSON';
 
 const API_KEY = config.get('tfnsw.apiKey');
