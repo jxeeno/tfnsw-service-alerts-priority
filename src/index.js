@@ -124,7 +124,7 @@ const getMatchedAlerts = async () => {
             const matchTxt = [header.text||'', descTxt||''].join('\n');
             if(matchTxt.match(/Lift at .* (not available|out of service)/i)){
                 header.text = '⛔️🛗 ' + header.text.trim()
-            }else if(matchTxt.match(/bus stop closure/i)){
+            }else if(matchTxt.match(/bus stop closures?/i)){
                 header.text = '⛔️🚏 ' + header.text.trim()
             }else if(matchTxt.match(/Trackwork may affect your travel/i)){
                 header.text = '🛠🛤 ' + header.text.trim()
