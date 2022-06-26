@@ -121,6 +121,8 @@ const getMatchedAlerts = async () => {
                 header.text = '🛠🛤 ' + header.text
             }else if(cause === 'MAINTENANCE' && effect === 'MODIFIED_SERVICE'){
                 header.text = '🛠🛤 ' + header.text
+            }else if(effect === 'MODIFIED_SERVICE'){
+                header.text = '🔀 ' + header.text
             }
         }
     }
