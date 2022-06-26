@@ -85,6 +85,11 @@ const getMatchedAlerts = async () => {
         routes.forEach(r => informedEntities.push(JSON.parse(r)))
 
         lodash.set(entity, 'alert.informedEntity', informedEntities);
+
+        const descTranslations = lodash.get(entity, 'alert.descriptionText.translation', []);
+        for(const translation of descTranslations){
+            translation.text = translation.text.trim();
+        }
     }
 
     decoded.header.gtfsRealtimeVersion = '2.0'
