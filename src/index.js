@@ -86,11 +86,6 @@ const getMatchedAlerts = async () => {
             }
         }
 
-        stops.forEach(s => informedEntities.push({stopId: s}))
-        routes.forEach(r => informedEntities.push(JSON.parse(r)))
-
-        lodash.set(entity, 'alert.informedEntity', informedEntities);
-
         const descTranslations = lodash.get(entity, 'alert.descriptionText.translation', []);
         const htmlTranslation = descTranslations.find(v => v.language === 'en/html' || v.text.match(/<(div|li)>/));
         let descTxt;
@@ -138,6 +133,19 @@ const getMatchedAlerts = async () => {
                 header.text = '🔀 ' + header.text.trim()
             }
         }
+
+        if(stops.size > 0 && !isRail && descTxt && descTxt.match(/\b2[0-9]{5,}\b/)){
+            stops.clear();
+
+            const tsns = descTxt.match(/\b2[0-9]{5,}\b/g)
+            tsns.forEach(tsn => stops.add(tsn))
+        }
+
+        // set informed entities at the end
+        stops.forEach(s => informedEntities.push({stopId: s}))
+        routes.forEach(r => informedEntities.push(JSON.parse(r)))
+
+        lodash.set(entity, 'alert.informedEntity', informedEntities);
     }
 
     decoded.header.gtfsRealtimeVersion = '2.0'
