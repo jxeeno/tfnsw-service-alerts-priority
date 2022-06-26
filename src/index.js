@@ -76,7 +76,7 @@ const getMatchedAlerts = async () => {
                 routes.add(ridk)
             }
 
-            if(e.tripId){
+            if(e.trip){
                 informedEntities.push(e)
             }
         }
