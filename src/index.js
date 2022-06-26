@@ -134,7 +134,7 @@ const getMatchedAlerts = async () => {
             }
         }
 
-        if(stops.size > 0 && !isRail && descTxt && descTxt.match(/\b2[0-9]{5,}\b/)){
+        if(!isRail && descTxt && descTxt.match(/\b2[0-9]{5,}\b/)){
             stops.clear();
 
             const tsns = descTxt.match(/\b2[0-9]{5,}\b/g)
