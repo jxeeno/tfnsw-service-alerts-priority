@@ -129,7 +129,7 @@ const getMatchedAlerts = async () => {
                 header.text = '🛠 ' + header.text.trim()
             }else if(cause === 8){ // weather
                 header.text = '🌨 ' + header.text.trim()
-            }else if(effect === 6 || effect === 4){ // modified_service or detour
+            }else if(effect === 6 || effect === 4 || matchTxt.match(/bus diversions?/)){ // modified_service or detour
                 header.text = '🔀 ' + header.text.trim()
             }else if(cause === 6){ // accident
                 header.text = '💥 ' + header.text.trim()
