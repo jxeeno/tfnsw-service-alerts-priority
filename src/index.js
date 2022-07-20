@@ -29,9 +29,13 @@ const getMatchedAlerts = async () => {
         return cached
     }
 
-    const {data: addInfoData} = await axios.get(EFA_ADD_INFO_URL);
+    const {data: addInfoData} = await axios.get(EFA_ADD_INFO_URL).catch(e => {
+        console.error('Failed to fetch EFA', e);
+    });
     const {data: gtfsData} = await axios.get(GTFSR_URL, {
         responseType: 'arraybuffer'
+    }).catch(e => {
+        console.error('Failed to fetch GTFS-R', e);
     });
 
     const emsIdMapping = new Map();
