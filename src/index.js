@@ -7,6 +7,7 @@ const lodash = require('lodash')
 const cheerio = require('cheerio')
 const NodeCache = require('node-cache')
 const srvCache = new NodeCache({stdTTL: 30, useClones: false});
+let ll;
 
 const GTFSR_URL = 'https://api.transport.nsw.gov.au/v2/gtfs/alerts/all';
 const EFA_ADD_INFO_URL = 'https://api.transport.nsw.gov.au/v1/tp/add_info?outputFormat=rapidJSON';
@@ -29,143 +30,143 @@ const getMatchedAlerts = async () => {
         return cached
     }
 
-    const {data: addInfoData} = await axios.get(EFA_ADD_INFO_URL).catch(e => {
-        console.error('Failed to fetch EFA', e);
-    });
-    const {data: gtfsData} = await axios.get(GTFSR_URL, {
-        responseType: 'arraybuffer'
-    }).catch(e => {
-        console.error('Failed to fetch GTFS-R', e);
-    });
+    try{
+        const {data: addInfoData} = await axios.get(EFA_ADD_INFO_URL);
+        const {data: gtfsData} = await axios.get(GTFSR_URL, {
+            responseType: 'arraybuffer'
+        });
 
-    const emsIdMapping = new Map();
-    for(const alert of addInfoData.infos.current){
-        emsIdMapping.set(alert.id, alert);
-    }
-
-    const decoded = FeedMessage.decode(gtfsData);
-    for(const entity of decoded.entity){
-        const url = lodash.get(entity, 'alert.url.translation[0].text');
-        const emsId = url.replace(/.*#\//, '');
-        const matchedAlert = emsIdMapping.get(emsId);
-
-        if(matchedAlert){
-            if(SEV_MAPPING[matchedAlert.priority]){
-                entity.alert.severityLevel = SEV_MAPPING[matchedAlert.priority];
-            }
-
-            if(matchedAlert.properties.speechText){
-                const $ = cheerio.load(`<tts>${matchedAlert.properties.speechText}</tts>`);
-                const ttsText = $('tts').text().trim();
-                if(ttsText){
-                    entity.alert.ttsDescriptionText = {translation: [{text: ttsText, language: 'en'}]}
-                }
-            }
+        const emsIdMapping = new Map();
+        for(const alert of addInfoData.infos.current){
+            emsIdMapping.set(alert.id, alert);
         }
 
-        const informedEntities = [];
+        const decoded = FeedMessage.decode(gtfsData);
+        for(const entity of decoded.entity){
+            const url = lodash.get(entity, 'alert.url.translation[0].text');
+            const emsId = url.replace(/.*#\//, '');
+            const matchedAlert = emsIdMapping.get(emsId);
 
-        const stops = new Set();
-        const routes = new Set();
-        const agencyIds = new Set();
+            if(matchedAlert){
+                if(SEV_MAPPING[matchedAlert.priority]){
+                    entity.alert.severityLevel = SEV_MAPPING[matchedAlert.priority];
+                }
 
-        const existingEntities = lodash.get(entity, 'alert.informedEntity');
+                if(matchedAlert.properties.speechText){
+                    const $ = cheerio.load(`<tts>${matchedAlert.properties.speechText}</tts>`);
+                    const ttsText = $('tts').text().trim();
+                    if(ttsText){
+                        entity.alert.ttsDescriptionText = {translation: [{text: ttsText, language: 'en'}]}
+                    }
+                }
+            }
 
-        for(const e of existingEntities){
-            if(e.trip){
-                informedEntities.push({trip: e.trip})
+            const informedEntities = [];
+
+            const stops = new Set();
+            const routes = new Set();
+            const agencyIds = new Set();
+
+            const existingEntities = lodash.get(entity, 'alert.informedEntity');
+
+            for(const e of existingEntities){
+                if(e.trip){
+                    informedEntities.push({trip: e.trip})
+                }else{
+                    if(e.stopId){
+                        stops.add(e.stopId)
+                    }
+
+                    if(e.routeId){
+                        const ridk = JSON.stringify({routeId: e.routeId, agencyId: e.agencyId});
+                        routes.add(ridk)
+                    }
+                }
+
+                if(e.agencyId){
+                    agencyIds.add(e.agencyId)
+                }
+            }
+
+            const descTranslations = lodash.get(entity, 'alert.descriptionText.translation', []);
+            const htmlTranslation = descTranslations.find(v => v.language === 'en/html' || v.text.match(/<(div|li)>/));
+            let descTxt;
+
+            if(htmlTranslation){
+                const $ = cheerio.load(`<html>${htmlTranslation.text}</html>`);
+                $("li").each((i, el) => {
+                    $(el).html('• ' + $(el).html())
+                });
+
+                const text = $('html').text().trim().replace(/\n\s*\.$/, '').replace(/(\s*\.)+$/, '.').trim();
+                descTxt = text;
+                lodash.set(entity, 'alert.descriptionText.translation', [{text, language: 'en'}, htmlTranslation]);
             }else{
-                if(e.stopId){
-                    stops.add(e.stopId)
-                }
-
-                if(e.routeId){
-                    const ridk = JSON.stringify({routeId: e.routeId, agencyId: e.agencyId});
-                    routes.add(ridk)
+                for(const translation of descTranslations){
+                    translation.text = translation.text.trim();
+                    descTxt = translation.text;
                 }
             }
 
-            if(e.agencyId){
-                agencyIds.add(e.agencyId)
+            // emojis
+            const headerTranslations = lodash.get(entity, 'alert.headerText.translation', []);
+            const header = headerTranslations.find(v => v.language === 'en');
+
+            const cause = lodash.get(entity, 'alert.cause');
+            const effect = lodash.get(entity, 'alert.effect');
+
+            const isRail = agencyIds.has('SydneyTrains') || agencyIds.has('NSWTrains') || agencyIds.has('SMNW') || agencyIds.has('SLR') || agencyIds.has('LR');
+
+            if(header){
+                const matchTxt = [header.text||'', descTxt||''].join('\n');
+                if(matchTxt.match(/Lift at .* (not available|out of service)/i)){
+                    header.text = '⛔️🛗 ' + header.text.trim()
+                }else if(matchTxt.match(/bus stop closures?/i)){
+                    header.text = '⛔️🚏 ' + header.text.trim()
+                }else if(matchTxt.match(/Trackwork may affect your travel/i)){
+                    header.text = '🛠🛤 ' + header.text.trim()
+                }else if(cause === 9 && effect === 6 && isRail){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
+                    header.text = '🛠🛤 ' + header.text.trim()
+                }else if(cause === 9 && effect === 6){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
+                    header.text = '🛠 ' + header.text.trim()
+                }else if(cause === 8){ // weather
+                    header.text = '🌨 ' + header.text.trim()
+                }else if(effect === 6 || effect === 4 || matchTxt.match(/bus diversions?/)){ // modified_service or detour
+                    header.text = '🔀 ' + header.text.trim()
+                }else if(cause === 6){ // accident
+                    header.text = '💥 ' + header.text.trim()
+                }else if(cause === 12){ // medical
+                    header.text = '🚑 ' + header.text.trim()
+                }
             }
-        }
 
-        const descTranslations = lodash.get(entity, 'alert.descriptionText.translation', []);
-        const htmlTranslation = descTranslations.find(v => v.language === 'en/html' || v.text.match(/<(div|li)>/));
-        let descTxt;
+            if(!isRail && descTxt && descTxt.match(/\b2[0-9]{5,}\b/)){
+                stops.clear();
 
-        if(htmlTranslation){
-            const $ = cheerio.load(`<html>${htmlTranslation.text}</html>`);
-            $("li").each((i, el) => {
-                $(el).html('• ' + $(el).html())
-            });
-
-            const text = $('html').text().trim().replace(/\n\s*\.$/, '').replace(/(\s*\.)+$/, '.').trim();
-            descTxt = text;
-            lodash.set(entity, 'alert.descriptionText.translation', [{text, language: 'en'}, htmlTranslation]);
-        }else{
-            for(const translation of descTranslations){
-                translation.text = translation.text.trim();
-                descTxt = translation.text;
+                const tsns = descTxt.match(/\b2[0-9]{5,}\b/g)
+                tsns.forEach(tsn => stops.add(tsn))
             }
+
+            // set informed entities at the end
+            stops.forEach(s => informedEntities.push({stopId: s}))
+            routes.forEach(r => informedEntities.push(JSON.parse(r)))
+
+            lodash.set(entity, 'alert.informedEntity', informedEntities);
         }
 
-        // emojis
-        const headerTranslations = lodash.get(entity, 'alert.headerText.translation', []);
-        const header = headerTranslations.find(v => v.language === 'en');
+        decoded.header.gtfsRealtimeVersion = '2.0'
+        
+        const all = decoded;
+        const normal = FeedMessage.create(decoded);
+        normal.entity = normal.entity.filter(entity => entity.alert.severityLevel !== 'INFO')
 
-        const cause = lodash.get(entity, 'alert.cause');
-        const effect = lodash.get(entity, 'alert.effect');
-
-        const isRail = agencyIds.has('SydneyTrains') || agencyIds.has('NSWTrains') || agencyIds.has('SMNW') || agencyIds.has('SLR') || agencyIds.has('LR');
-
-        if(header){
-            const matchTxt = [header.text||'', descTxt||''].join('\n');
-            if(matchTxt.match(/Lift at .* (not available|out of service)/i)){
-                header.text = '⛔️🛗 ' + header.text.trim()
-            }else if(matchTxt.match(/bus stop closures?/i)){
-                header.text = '⛔️🚏 ' + header.text.trim()
-            }else if(matchTxt.match(/Trackwork may affect your travel/i)){
-                header.text = '🛠🛤 ' + header.text.trim()
-            }else if(cause === 9 && effect === 6 && isRail){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
-                header.text = '🛠🛤 ' + header.text.trim()
-            }else if(cause === 9 && effect === 6){ // 9 === 'MAINTENANCE', 6 === 'MODIFIED_SERVICE'
-                header.text = '🛠 ' + header.text.trim()
-            }else if(cause === 8){ // weather
-                header.text = '🌨 ' + header.text.trim()
-            }else if(effect === 6 || effect === 4 || matchTxt.match(/bus diversions?/)){ // modified_service or detour
-                header.text = '🔀 ' + header.text.trim()
-            }else if(cause === 6){ // accident
-                header.text = '💥 ' + header.text.trim()
-            }else if(cause === 12){ // medical
-                header.text = '🚑 ' + header.text.trim()
-            }
-        }
-
-        if(!isRail && descTxt && descTxt.match(/\b2[0-9]{5,}\b/)){
-            stops.clear();
-
-            const tsns = descTxt.match(/\b2[0-9]{5,}\b/g)
-            tsns.forEach(tsn => stops.add(tsn))
-        }
-
-        // set informed entities at the end
-        stops.forEach(s => informedEntities.push({stopId: s}))
-        routes.forEach(r => informedEntities.push(JSON.parse(r)))
-
-        lodash.set(entity, 'alert.informedEntity', informedEntities);
-    }
-
-    decoded.header.gtfsRealtimeVersion = '2.0'
-    
-    const all = decoded;
-    const normal = FeedMessage.create(decoded);
-    normal.entity = normal.entity.filter(entity => entity.alert.severityLevel !== 'INFO')
-
-    srvCache.set('cached', {all, normal})
-    return {
-        all,
-        normal
+        const resp = {all, normal};
+        srvCache.set('cached', resp)
+        ll = resp;
+        return resp
+    }catch(e){
+        console.error('There was an error', e);
+        return ll
     }
 }
 
@@ -177,6 +178,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.get('/v1/gtfs/alerts/:type', async (req, res) => {
     if(['all', 'normal'].includes(req.params.type)){
         const val = (await getMatchedAlerts())[req.params.type];
+        if(!val){
+            res.sendStatus(500);
+            res.send({error: true, message: 'could not get alerts'})
+        }
         if(req.query.json){
             res.send(val.toJSON())
         }else{
