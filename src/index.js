@@ -21,7 +21,8 @@ const FeedMessage = root.lookupType("transit_realtime.FeedMessage");
 
 const SEV_MAPPING = {
     'normal': 'WARNING',
-    'low': 'INFO'
+    'low': 'INFO',
+    'veryLow': 'INFO'
 }
 
 const getMatchedAlerts = async () => {
